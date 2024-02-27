@@ -8,6 +8,7 @@ import typer
 from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel
+from tenacity import retry, stop_after_attempt, wait_exponential
 from tqdm.auto import tqdm
 
 PathLike = Union[str, Path]
@@ -88,12 +89,16 @@ def pair_markdown_code_and_outputs(notebook_cells):
 def read_notebooks(directory: PathLike):
     notebooks: List[Notebook] = []
     directory = Path(directory)
-    for file in directory.rglob("*.ipynb"):
+    files = list(directory.rglob("*.ipynb"))
+    # Sort the files by name
+    files.sort()
+    for file in files:
         notebooks.append(Notebook(nb_path=file.resolve(), nb_cells=nbformat.read(file, as_version=4)))
     assert len(notebooks) > 0, f"No notebooks found in {directory}"
     return notebooks
 
 
+@retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(3))
 def explain_group(group: dict, idx: int, total: int, model_name: str):
     markdown = group["markdown"]
     code = group["code"]
@@ -151,8 +156,10 @@ def generate(
     Generate a blog from notebooks in the specified directory using the given model.
 
     Args:
-        model_name (str): The name of the model to use for generating the blog. Defaults to "gpt-4-turbo-preview".
-        notebook_directory (str): The directory containing the notebooks to generate the blog from.
+
+    - model_name (str): The name of the model to use for generating the blog. Defaults to "gpt-4-turbo-preview"
+
+    - notebook_directory (str): The directory containing the notebooks to generate the blog from.
     """
     logger.info(f"Generating blog from notebooks in {notebook_directory} using model {model_name}")
     notebooks = read_notebooks(notebook_directory)
