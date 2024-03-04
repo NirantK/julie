@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "julie"
-version = "0.1.0"
+version = "0.1.1"
 description = "Julie is a blogging assistant and linter for AI Hackers wanting to make their work more accessible"
 authors = ["Nirant Kasliwal <nirant.bits@gmail.com>"]
 readme = "README.md"

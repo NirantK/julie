@@ -103,28 +103,32 @@ def explain_group(group: dict, idx: int, total: int, model_name: str):
     markdown = group["markdown"]
     code = group["code"]
     outputs = group["outputs"]
-    if outputs:
+    if len(outputs) > 0:
         input_content = f"Markdown: {markdown}\n\nCode: {code}\n\nOutputs: {outputs}"
     else:
         input_content = f"Markdown: {markdown}\n\nCode: {code}"
-    prompt = f"""Given the following sections with headings, content, code, and outputs, generate an explanation for each section that preserves the headings where relevant:
+    prompt = f"""Given the following sections with headings, content, code, and outputs, generate a crisp, concise explanation for each section that preserves the headings where relevant:
 
 {input_content}
 
 """
     response = client.chat.completions.create(
         model=model_name,
+        temperature=0.2,
+        presence_penalty=0.1,
+        seed=42,
         messages=[
             {
                 "role": "system",
-                "content": """Generate a blog from a Jupyter notebook. Each section is demarcated by markdown headers and may include explanatory text, code snippets, and their outputs. The blog should:
+                "content": """Each section is demarcated by markdown headers and may include explanatory text, code snippets, and their outputs. The blog should:
 - Preserve the original structure indicated by markdown headers.
 - Incorporate key insights from both the explanatory text and the associated code snippets.
 - Reflect the significance of any code outputs, highlighting how they demonstrate or impact the discussed concepts.
 - Remain concise, focusing on the most important points that convey the essence of each section.
 - Never write a conclusion or ask for follow up questions.
+- Don't explain the imports or the code that is not relevant to the explanation.
 
-Note: Readers who may have Python expertise but are not familiar with Qdrant.
+Note: Readers are Python experts but are not familiar with Qdrant.
 Never introduce yourself or greet the reader.
 """,
             },
